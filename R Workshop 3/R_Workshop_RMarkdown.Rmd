@@ -1,0 +1,106 @@
+
+
+---
+title: "R Workshop"
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
+---
+
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+
+
+
+```{r course_evals}
+setwd("/Users/patriciakirkland/Dropbox/Empiprical Reasoning Center/R Workshop")
+
+rm(list=ls(all=TRUE))
+
+load("evaluation_data.RData")
+
+head(data)
+
+summary(data)
+```
+
+## Writing About Data
+
+With R Markdown, we can easily present information about data.  For example, we can start with some descriptive statistics.  Our main dependent variable of interest is *course evaluation*, which has a mean of `r round(mean(data$course_eval, na.rm=T), digits=3)` with a minimum value of `r min(data$course_eval)` and a maximum value of `r max(data$course_eval)`.
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r course_eval_histogram, echo=TRUE, message=FALSE, fig.align='center'}
+
+data$gender <- factor(data$female,levels=c(0, 1),
+                          labels=c("Male","Female")) 
+
+library(ggplot2)
+
+# Histogram for course evaluations
+# grouped by number of gender (indicated by color)
+qplot(course_eval, data=data, geom="histogram", fill=gender, alpha=I(.5), 
+      main="Distribution of Course Evaluations", xlab="Evaluation Score", 
+      ylab="Density")
+
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+## Adding Tables
+
+You can also use the stargazer R package (or other R packages, such as kable or xtable) to add tables to documents created with RMarkdown. 
+
+
+### Summary Statistics
+
+```{r summary_table, echo=FALSE, results='asis', message=FALSE}
+
+library(xtable)
+library(knitr)
+library(stargazer)
+summary_table <- summary(data[,1:8])
+
+stargazer(data[,1:8], digits=3, digits.extra=3, header=FALSE, type="html")
+# stargazer(data[,1:8], digits=3, digits.extra=3, header=FALSE)
+```
+
+
+### Regression Tables
+
+```{r reg_table, echo=TRUE, results='asis', message=FALSE}
+
+fit_1 <- lm(course_eval ~ female + beauty, data=data)
+
+ stargazer(fit_1, digits=3, digits.extra=3, header=FALSE, type="html")
+# stargazer(fit_1, digits=3, digits.extra=3, header=FALSE)
+```
+
+## Why Use R Markdown?
+
+* easy to include plots and results--- everything in one file!
+* the document is replicable
+* produces documents in multiple formats
+    + PDF (must have LaTeX)
+    + HTML
+    + MS Word
+* also produces beamer or ioslides, which makes it easy to display code, plots, results
+
+
+
