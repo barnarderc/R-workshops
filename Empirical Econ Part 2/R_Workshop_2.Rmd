@@ -1,0 +1,167 @@
+---
+title: "R_Workshop_2"
+author: "Empirical Reasoning Center"
+date: "February 16, 2017"
+output:
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+rm(list=ls())
+# install.packages("xtable")
+# install.packages("psych")
+# install.packages("knitr")
+# install.packages("dplyr")
+# install.packages("stargazer")
+# install.packages("ggplot2")
+# install.packages("gapminder") 
+library(xtable)
+library(psych)
+library(knitr)
+library(dplyr)
+library(stargazer)
+library(ggplot2)
+library(gapminder) 
+
+setwd("/Users/bencollins/Desktop/R_Workshop2")
+
+load("01_CPI-data_Workshop.RData")
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+How To Use R Markdown
+=====================
+
+Think of Markdown as an alternative to Microsoft Word.  It is a word precessor that allows you to clean your data, run analyses, and write your paper all in one document.  It makes reporting results and including figures much easier.  It also enables replicability.
+
+header 1
+=========
+header 2
+---------
+### header 3
+
+Lists
+
+- one
+
+- two
+
+- three
+
+*italics*
+
+**bold**
+
+_italics_
+
+__bold__
+
+$A = \pi^2 + x_i$
+
+regular text
+
+### Chunks of code
+
+```{r chunk_name}
+#code
+x <- c(1,2,3,4,5,6,7)
+y <- c(7,6,5,4,3,2,1)
+
+CPI<- rename(CPI, country=Country)
+CPI_GM <- left_join(CPI,gapminder,by="country")
+CPI_GM <- subset(CPI_GM,!is.na(CPI_GM$gdpPercap))
+
+```
+
+### In-line code
+The estimated correlation between x and y was `r cor(x,y)`.
+
+Returning to ggplot
+--------------------
+```{r plots, tidy=TRUE}
+#The following line creates a set of axes
+ggplot(CPI_GM, aes(x = CPI2015, y = gdpPercap))
+#The following line assigns the chart to an object
+p <- ggplot(data = CPI_GM, aes(x = CPI2015, y = gdpPercap))
+p
+#The following line creates the simple scatter plot
+ggplot( data = CPI_GM, aes(x = CPI2015, y = gdpPercap)) + geom_point()
+#The following line maps the continent to color
+ggplot(CPI_GM, aes(x = CPI2015, y = gdpPercap)) + geom_point(aes(color = continent))
+#The following line changes the size and opacity of the points
+ggplot(CPI_GM, aes(x = CPI2015, y = gdpPercap)) + geom_point(aes(color = continent), alpha = 0.3, size=3)
+#The following line adds axis labels
+ggplot(CPI_GM, aes(x = CPI2015, y = gdpPercap)) + geom_point(aes(color = continent), alpha = 0.3, size=3) + xlab("Corruption Index") + ylab("GDP per Capita")
+#The following line specifies a linear fitted line
+ggplot(CPI_GM, aes(x = CPI2015, y = gdpPercap)) + geom_point(aes(color = continent)) + geom_smooth(method="lm")
+#The following line specifies a linear fitted line and maps the continent to color
+ggplot(CPI_GM, aes(x = CPI2015, y = gdpPercap)) + geom_point(aes(color = continent)) + geom_smooth(method="lm", aes(color = continent))
+#The following line maps the continent to the facet
+p <- ggplot(CPI_GM, aes(x = CPI2015, y = gdpPercap, color = continent)) + geom_point(alpha=0.5, size=3) + facet_grid( . ~ continent)
+p
+```
+
+```{r chunk_options, echo=FALSE}
+p <- ggplot(CPI_GM, aes(x = CPI2015, y = gdpPercap)) + geom_point(aes(color = continent), alpha = 0.3, size=3)
+p
+#Code will not be shown because echo=FALSE
+```
+
+```{r chunk_options2, results='hide'}
+p <- ggplot(CPI_GM, aes(x = CPI2015, y = gdpPercap, color = continent)) + geom_point(alpha=0.5, size=3) + facet_grid( . ~ continent)
+#Output will not be shown because results=FALSE, but the code will be shown
+```
+
+```{r chunk_option3, include=FALSE}
+p2<- ggplot(CPI_GM, aes(x = CPI2015, y = gdpPercap, color = continent)) + geom_point(alpha=0.5, size=3) + facet_grid( . ~ continent)
+p2
+#Output and code will not be shown because include=FALSE, but the code will be still be evaluated
+```
+
+
+```{r figure_option, fig.width=2, fig.height=2}
+ggplot( data = CPI_GM, aes(x = CPI2015, y = gdpPercap)) + geom_point()
+```
+
+Tables
+---------------
+```{r statistics}
+kable(describe(CPI_GM[c(1,2,29,30,32)]), 
+      format='markdown', 
+      caption="Books Read",
+      digits=2)
+```
+
+
+```{r grouped_stats}
+
+CPI.by.continent = CPI_GM %>%
+  filter(!is.na(continent)) %>%
+  group_by(continent) %>% 
+  summarise(ct=n(),
+            mn=mean(CPI2015),
+            md=median(CPI2015),
+            min=min(CPI2015),
+            max=max(CPI2015),
+            range=max-min,
+            sd=sd(CPI2015),
+            skew=skew(CPI2015),
+            kurtosis=kurtosi(CPI2015))
+colnames(CPI.by.continent) = 
+  c('Continent','Count','Mean','Median','Min','Max','Range','Std Dev','Skew','Kurtosis')
+kable(CPI.by.continent, format='markdown', digits=2)
+
+```
+
+Regression
+----------
+```{r regression, results = 'asis', warning=FALSE, message=FALSE}
+
+fit1 <- lm(gdpPercap ~ CPI2015, CPI_GM)
+fit2 <- lm(gdpPercap ~ CPI2015 + year, CPI_GM)
+fit3 <- lm(gdpPercap ~ CPI2015 + year + as.factor(continent), CPI_GM)
+
+stargazer(fit1, fit2, fit3, type = 'html')
+```
+
+
